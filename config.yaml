@@ -6,6 +6,10 @@ channels:
   4:
     - Speakers (Logitech G733 Gaming Headset)
     - Speakers (Realtek High Definition Audio)
+  5:
+    type: key
+    action:
+      mute: 4
   # 0: master
   # 1: chrome.exe
   # 2: spotify.exe
@@ -22,10 +26,13 @@ baud_rate: 9600
 noise_reduction:
   default_epsilon: 20
   default_weight: 0.2
-  # channels:
+  channels:
   #   0:
   #     epsilon: 18
   #     weight: 0.2
   #   1:
   #     epsilon: 18
   #     weight: 0.2
+    5:
+      epsilon: 100
+      weight: 1
