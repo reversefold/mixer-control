@@ -8,8 +8,10 @@ authors = ["Julia Patrin <papercrane@reversefold.com>"]
 python = "^3.8"
 pySerial = "^3.5"
 PyYAML = "^5.4.1"
+pycaw = "^20181226"
 
 [tool.poetry.dev-dependencies]
+ipdb = "^0.13.4"
 
 [build-system]
 requires = ["poetry>=0.12"]

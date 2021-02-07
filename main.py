@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
+import ctypes
+import math
 import sys
 from typing import List, Tuple
 
+import comtypes
 import serial
 import yaml
+from pycaw import pycaw
 
 
 # import serial.tools.list_ports as port_list
@@ -71,49 +75,93 @@ class Sensor(object):
         return self.output
 
 
-def main():
-    config = Config.load("config.yaml")
-    print(config.data)
-    sensors = []
-    for i in range(len(config.data["channels"])):
-        if i in config.data.get("noise_reduction", {}).get("channels", {}):
-            custom_noise_reduction = config.data["noise_reduction"]["channels"][i]
-            sensor = Sensor(
-                custom_noise_reduction["weight"], custom_noise_reduction["epsilon"],
+class Main(object):
+    def __init__(self):
+        self._lpcguid = ctypes.pointer(comtypes.GUID.create_new())
+
+    def _get_session_volume(self, session):
+        if hasattr(session, "SimpleAudioVolume"):
+            return self._clean_session_volume(
+                session.SimpleAudioVolume.GetMasterVolume()
             )
+
+        return self._clean_session_volume(session.GetMasterVolumeLevelScalar())
+
+    def _set_session_volume(self, session, value):
+        if hasattr(session, "SimpleAudioVolume"):
+            session.SimpleAudioVolume.SetMasterVolume(value, self._lpcguid)
         else:
-            sensor = Sensor(
-                config.data["noise_reduction"]["default_weight"],
-                config.data["noise_reduction"]["default_epsilon"],
-            )
-        sensors.append(sensor)
+            session.SetMasterVolumeLevelScalar(value, self._lpcguid)
 
-    with serial.Serial(config.data["com_port"], config.data["baud_rate"], timeout=1) as ser:
-        print(ser.name)
+    def _clean_session_volume(self, value):
+        return math.floor(value * 100) / 100.0
 
-        while True:
-            line = ser.readline().decode("utf8", errors="replace").strip()
-            values = [int(s) for s in line.split("|")]
-            for idx, val in enumerate(values):
-                if idx < len(sensors):
-                    sensors[idx].nextval(val)
-                else:
-                    break
-            print(
-                " | ".join(
-                    " ".join(
-                        f"{val:7.2f}"
-                        for val in [
-                            sensor.rawval,
-                            sensor.ema,
-                            sensor.delta_ema,
-                            sensor.output,
-                        ]
-                    )
-                    for sensor in sensors
+
+    def main(self):
+        config = Config.load("config.yaml")
+        print(config.data)
+        sensors = []
+        for i in range(len(config.data["channels"])):
+            if i in config.data.get("noise_reduction", {}).get("channels", {}):
+                custom_noise_reduction = config.data["noise_reduction"]["channels"][i]
+                sensor = Sensor(
+                    custom_noise_reduction["weight"], custom_noise_reduction["epsilon"],
                 )
+            else:
+                sensor = Sensor(
+                    config.data["noise_reduction"]["default_weight"],
+                    config.data["noise_reduction"]["default_epsilon"],
+                )
+            sensors.append(sensor)
+
+        with serial.Serial(config.data["com_port"], config.data["baud_rate"], timeout=1) as ser:
+            print(ser.name)
+
+            active_device = pycaw.AudioUtilities.GetSpeakers()
+            active_device_interface = active_device.Activate(
+                pycaw.IAudioEndpointVolume._iid_, comtypes.CLSCTX_ALL, None
             )
+            master_session = comtypes.cast(
+                active_device_interface, ctypes.POINTER(pycaw.IAudioEndpointVolume)
+            )
+            print(master_session)
+            print(self._get_session_volume(master_session))
+            # import ipdb; ipdb.set_trace()
+
+            while True:
+                line = ser.readline().decode("utf8", errors="replace").strip()
+                if not line:
+                    print(repr(line))
+                    continue
+                print(line)
+                (analog_line, digital_line) = [p.strip() for p in line.split(":")]
+                if analog_line:
+                    values = [int(s) for s in analog_line.split("|")]
+                    for idx, val in enumerate(values):
+                        if idx < len(sensors):
+                            sensors[idx].nextval(val)
+                        else:
+                            break
+                    print(
+                        " | ".join(
+                            " ".join(
+                                f"{val:7.2f}"
+                                for val in [
+                                    sensor.rawval,
+                                    sensor.ema,
+                                    sensor.delta_ema,
+                                    sensor.output,
+                                ]
+                            )
+                            for sensor in sensors
+                        )
+                    )
+                if digital_line:
+                    self.digital_values = [i == "1" for i in digital_line.split("|")]
+                    # print(self.digital_values)
+                    # sessions = AudioUtilities.GetAllSessions()
+                    master_session.SetMute(1 if self.digital_values[0] else 0, self._lpcguid)
 
 
 if __name__ == "__main__":
-    main()
+    Main().main()
