@@ -1,17 +1,27 @@
 [tool.poetry]
-name = "deej"
-version = "0.1.0"
+name = "mixer_control"
+version = "0.2.0"
 description = ""
 authors = ["Julia Patrin <papercrane@reversefold.com>"]
+packages = [
+    {include="mixer_control"},
+]
+license = "MIT"
 
 [tool.poetry.dependencies]
-python = "^3.8"
+python = "^3.9"
 pySerial = "^3.5"
 PyYAML = "^5.4.1"
-pycaw = "^20181226"
+comtypes = "^1.1.8"
+pycaw-rf = "^20210213"
+#pyWinCoreAudio = { path = "../../../pyWinCoreAudio" }
 
+pywincoreaudio = "^0.3"
+jsonschema = "^3.2.0"
 [tool.poetry.dev-dependencies]
 ipdb = "^0.13.4"
+ipython = "^7.20.0"
+jupyter = "^1.0.0"
 
 [build-system]
 requires = ["poetry>=0.12"]

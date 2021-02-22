@@ -1,14 +1,10 @@
 #!/usr/bin/env python3
-import ctypes
-import math
 import sys
-from typing import List, Tuple
 
-import comtypes
 import serial
 import yaml
-from pycaw import pycaw
 
+from mixer_control import sensor as mc_sensor
 
 # import serial.tools.list_ports as port_list
 
@@ -38,65 +34,9 @@ class Config(object):
         return cls(data)
 
 
-class Sensor(object):
-    def __init__(self, weight, epsilon):
-        self.weight: float = weight
-        self.inverse_weight = 1.0 - weight
-        self.epsilon: int = epsilon
-
-        self._initialized = False
-        self.rawval: int = -1
-        self.ema: float = -1
-        self.output: int = -1
-        self.delta_ema: float = 0
-
-    def nextval(self, rawval):
-        self.rawval = rawval
-        if not self._initialized:
-            self.ema = rawval
-            self.output = rawval
-            self._initialized = True
-        else:
-            # EMA of the signal to reduce noise
-            self.ema = self.inverse_weight * self.ema + self.weight * rawval
-            # EMA of the distance between the output value and the raw value to decide if we're getting noise or a real change
-            self.delta_ema = self.inverse_weight * self.delta_ema + self.weight * (
-                rawval - self.output
-            )
-            if MAXVAL - self.ema < self.epsilon:
-                self.output = MAXVAL
-                self.delta_ema = 0
-            elif self.ema - MINVAL < self.epsilon:
-                self.output = MINVAL
-                self.delta_ema = 0
-            elif abs(self.delta_ema) > self.epsilon:
-                self.output = self.ema
-                self.delta_ema = 0
-        return self.output
 
 
 class Main(object):
-    def __init__(self):
-        self._lpcguid = ctypes.pointer(comtypes.GUID.create_new())
-
-    def _get_session_volume(self, session):
-        if hasattr(session, "SimpleAudioVolume"):
-            return self._clean_session_volume(
-                session.SimpleAudioVolume.GetMasterVolume()
-            )
-
-        return self._clean_session_volume(session.GetMasterVolumeLevelScalar())
-
-    def _set_session_volume(self, session, value):
-        if hasattr(session, "SimpleAudioVolume"):
-            session.SimpleAudioVolume.SetMasterVolume(value, self._lpcguid)
-        else:
-            session.SetMasterVolumeLevelScalar(value, self._lpcguid)
-
-    def _clean_session_volume(self, value):
-        return math.floor(value * 100) / 100.0
-
-
     def main(self):
         config = Config.load("config.yaml")
         print(config.data)
@@ -104,11 +44,11 @@ class Main(object):
         for i in range(len(config.data["channels"])):
             if i in config.data.get("noise_reduction", {}).get("channels", {}):
                 custom_noise_reduction = config.data["noise_reduction"]["channels"][i]
-                sensor = Sensor(
+                sensor = mc_sensor.EMASensor(
                     custom_noise_reduction["weight"], custom_noise_reduction["epsilon"],
                 )
             else:
-                sensor = Sensor(
+                sensor = mc_sensor.EMASensor(
                     config.data["noise_reduction"]["default_weight"],
                     config.data["noise_reduction"]["default_epsilon"],
                 )
