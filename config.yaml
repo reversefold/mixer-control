@@ -1,22 +1,21 @@
 channels:
-  0: Chat (TC-Helicon GoXLR)
-  1: Music (TC-Helicon GoXLR)
-  2: Game (TC-Helicon GoXLR)
-  3: System (TC-Helicon GoXLR)
-  4:
-    - Speakers (Logitech G733 Gaming Headset)
-    - Speakers (Realtek High Definition Audio)
-  5:
-    type: key
+- device: Chat (TC-Helicon GoXLR)
+- device: Music (TC-Helicon GoXLR)
+- device: Game (TC-Helicon GoXLR)
+- device: System (TC-Helicon GoXLR)
+- - device: Speakers (Logitech G733 Gaming Headset)
+  - device: Speakers (Realtek High Definition Audio)
+- key:
     action:
-      mute: 4
-  # 0: master
-  # 1: chrome.exe
-  # 2: spotify.exe
-  # 3:
-  #   - pathofexile_x64.exe
-  #   - rocketleague.exe
-  # 4: discord.exe
+      mute:
+        channel: 4
+# 0: master
+# 1: chrome.exe
+# 2: spotify.exe
+# 3:
+#   - pathofexile_x64.exe
+#   - rocketleague.exe
+# 4: discord.exe
 
 invert_sliders: false
 
@@ -26,13 +25,13 @@ baud_rate: 9600
 noise_reduction:
   default_epsilon: 20
   default_weight: 0.2
-  channels:
-  #   0:
-  #     epsilon: 18
-  #     weight: 0.2
-  #   1:
-  #     epsilon: 18
-  #     weight: 0.2
-    5:
-      epsilon: 100
-      weight: 1
+  # channels:
+  # #   0:
+  # #     epsilon: 18
+  # #     weight: 0.2
+  # #   1:
+  # #     epsilon: 18
+  # #     weight: 0.2
+  #   5:
+  #     epsilon: 100
+  #     weight: 1

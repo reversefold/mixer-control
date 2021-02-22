@@ -1,0 +1,67 @@
+---
+$schema: http://json-schema.org/draft/2019-09/schema#
+$id: https://github.com/reversefold/deej/config.schema.yaml
+title: JSON Schema for deej config.yaml
+type: object
+properties:
+  channels:
+    type: array
+    minItem: 1
+    items:
+      oneOf:
+      - $ref: "#/definitions/channel"
+      - type: array
+        items:
+          $ref: "#/definitions/channel"
+  invert_sliders: {type: boolean}
+  com_port: {type: string}
+  baud_rate: {type: integer}
+  noise_reduction:
+    type: object
+    properties:
+      default_epsilon: {type: integer}
+      default_weight: {type: number}
+    additionalProperties: false
+additionalProperties: false
+
+definitions:
+  target:
+    oneOf:
+    - type: string
+    - type: object
+      properties:
+        device: {type: string}
+        process: {type: string}
+        epsilon: {type: integer}
+        weight: {type: number}
+      additionalProperties: false
+      oneOf:
+      - required: [device]
+      - required: [process]
+
+  channel:
+    oneOf:
+    - $ref: "#/definitions/target"
+    - type: object
+      properties:
+        key:
+          type: object
+          properties:
+            action:
+              type: object
+              properties:
+                mute:
+                  oneOf:
+                    - type: object
+                      properties:
+                        channel: {type: integer}
+                      additionalProperties: false
+                      required: [channel]
+                    - $ref: "#/definitions/target"
+              additionalProperties: false
+              required: [mute]
+          additionalProperties: false
+          required: [action]
+      additionalProperties: false
+      required: [key]
+...
