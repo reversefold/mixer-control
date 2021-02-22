@@ -4,15 +4,38 @@ $id: https://github.com/reversefold/deej/config.schema.yaml
 title: JSON Schema for deej config.yaml
 type: object
 properties:
-  channels:
+  analog_channels:
     type: array
-    minItem: 1
     items:
-      oneOf:
-      - $ref: "#/definitions/channel"
-      - type: array
-        items:
-          $ref: "#/definitions/channel"
+      type: object
+      properties:
+        invert:
+          type: boolean
+        targets:
+          type: array
+          items:
+            $ref: "#/definitions/target"
+      required: [targets]
+  digital_channels:
+    type: array
+    items:
+      type: object
+      properties:
+        invert:
+          type: boolean
+        mute:
+          type: object
+          properties:
+            targets:
+              type: array
+              items:
+                $ref: "#/definitions/target"
+          additionalProperties: false
+          required: [targets]
+      additionalProperties: false
+      required: [mute]
+
+
   invert_sliders: {type: boolean}
   com_port: {type: string}
   baud_rate: {type: integer}
@@ -25,10 +48,16 @@ properties:
 additionalProperties: false
 
 definitions:
+  targets:
+    type: array
+    minItems: 1
+    items:
+      $ref: "#/definitions/target"
   target:
-    oneOf:
-    - type: string
-    - type: object
+    # oneOf:
+    # - type: string
+    # -
+      type: object
       properties:
         device: {type: string}
         process: {type: string}
@@ -38,30 +67,4 @@ definitions:
       oneOf:
       - required: [device]
       - required: [process]
-
-  channel:
-    oneOf:
-    - $ref: "#/definitions/target"
-    - type: object
-      properties:
-        key:
-          type: object
-          properties:
-            action:
-              type: object
-              properties:
-                mute:
-                  oneOf:
-                    - type: object
-                      properties:
-                        channel: {type: integer}
-                      additionalProperties: false
-                      required: [channel]
-                    - $ref: "#/definitions/target"
-              additionalProperties: false
-              required: [mute]
-          additionalProperties: false
-          required: [action]
-      additionalProperties: false
-      required: [key]
 ...

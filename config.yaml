@@ -1,14 +1,21 @@
-channels:
-- device: Chat (TC-Helicon GoXLR)
-- device: Music (TC-Helicon GoXLR)
-- device: Game (TC-Helicon GoXLR)
-- device: System (TC-Helicon GoXLR)
-- - device: Speakers (Logitech G733 Gaming Headset)
-  - device: Speakers (Realtek High Definition Audio)
-- key:
-    action:
-      mute:
-        channel: 4
+---
+analog_channels:
+- targets:
+    - device: Chat (TC-Helicon GoXLR)
+- targets:
+    - device: Music (TC-Helicon GoXLR)
+- targets:
+    - device: Game (TC-Helicon GoXLR)
+- invert: true
+  targets:
+    - device: System (TC-Helicon GoXLR)
+- targets:
+    - device: Speakers (Logitech G733 Gaming Headset)
+    - device: Speakers (Realtek High Definition Audio)
+digital_channels:
+  - mute:
+      targets:
+      - device: System (TC-Helicon GoXLR)
 # 0: master
 # 1: chrome.exe
 # 2: spotify.exe
@@ -17,7 +24,7 @@ channels:
 #   - rocketleague.exe
 # 4: discord.exe
 
-invert_sliders: false
+# invert_sliders: false
 
 com_port: COM8
 baud_rate: 9600
@@ -35,3 +42,4 @@ noise_reduction:
   #   5:
   #     epsilon: 100
   #     weight: 1
+...
