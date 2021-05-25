@@ -1,3 +1,8 @@
+## constants
+MINVAL = 0
+MAXVAL = 1023
+
+
 class EMASensor(object):
     def __init__(self, weight, epsilon):
         self.weight: float = weight

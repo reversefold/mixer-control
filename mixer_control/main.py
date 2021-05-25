@@ -1,10 +1,23 @@
 #!/usr/bin/env python3
+import ctypes
+import datetime
+import logging
 import sys
+import time
 
+import comtypes
+import pycaw
 import serial
-import yaml
 
 from mixer_control import sensor as mc_sensor
+from mixer_control import config as mc_config
+
+
+LOG = logging.getLogger(__name__)
+
+
+OUTPUT_PERIOD = datetime.timedelta(seconds=10)
+
 
 # import serial.tools.list_ports as port_list
 
@@ -13,49 +26,21 @@ from mixer_control import sensor as mc_sensor
 #     print(p)
 
 
-## Config
-PORT = "COM8"
-BAUD = 9600
-
-
-## Global constants
-MINVAL = 0
-MAXVAL = 1023
-
-
-class Config(object):
-    def __init__(self, data):
-        self.data = data
-
-    @classmethod
-    def load(cls, filename):
-        with open(filename, "r") as f:
-            data = yaml.load(f)
-        return cls(data)
-
-
-
-
 class Main(object):
-    def main(self):
-        config = Config.load("config.yaml")
-        print(config.data)
-        sensors = []
-        for i in range(len(config.data["channels"])):
-            if i in config.data.get("noise_reduction", {}).get("channels", {}):
-                custom_noise_reduction = config.data["noise_reduction"]["channels"][i]
-                sensor = mc_sensor.EMASensor(
-                    custom_noise_reduction["weight"], custom_noise_reduction["epsilon"],
-                )
-            else:
-                sensor = mc_sensor.EMASensor(
-                    config.data["noise_reduction"]["default_weight"],
-                    config.data["noise_reduction"]["default_epsilon"],
-                )
-            sensors.append(sensor)
+    def __init__(self):
+        self.config = None
+        self.analog_channels = None
 
-        with serial.Serial(config.data["com_port"], config.data["baud_rate"], timeout=1) as ser:
-            print(ser.name)
+    def main(self):
+        self.config = mc_config.Config.load("config.yaml")
+        LOG.debug(self.config.data)
+        LOG.debug(self.config.analog_channels)
+        self.analog_channels = self.config.analog_channels
+
+        with serial.Serial(
+            self.config.data["com_port"], self.config.data["baud_rate"], timeout=1
+        ) as ser:
+            LOG.info(ser.name)
 
             active_device = pycaw.AudioUtilities.GetSpeakers()
             active_device_interface = active_device.Activate(
@@ -64,44 +49,70 @@ class Main(object):
             master_session = comtypes.cast(
                 active_device_interface, ctypes.POINTER(pycaw.IAudioEndpointVolume)
             )
-            print(master_session)
-            print(self._get_session_volume(master_session))
-            # import ipdb; ipdb.set_trace()
+            LOG.debug(master_session)
+            # LOG.debug(self._get_session_volume(master_session))
+
+            last_output = datetime.datetime.now() - OUTPUT_PERIOD
 
             while True:
                 line = ser.readline().decode("utf8", errors="replace").strip()
-                if not line:
-                    print(repr(line))
+                if "|" not in line:
+                    LOG.warning("Unknown line of data from serial interface %r", line)
                     continue
-                print(line)
-                (analog_line, digital_line) = [p.strip() for p in line.split(":")]
+                data = [p.strip() for p in line.split(":")]
+                analog_line = data[0]
+                digital_line = data[1] if len(data) > 1 else None
                 if analog_line:
-                    values = [int(s) for s in analog_line.split("|")]
+                    values = [int(s) if s else 0 for s in analog_line.split("|")]
                     for idx, val in enumerate(values):
-                        if idx < len(sensors):
-                            sensors[idx].nextval(val)
+                        if idx < len(self.analog_channels):
+                            (sensor, channel) = self.analog_channels[idx]
+                            last = sensor.output
+                            sensor.nextval(val)
+                            if last != sensor.output:
+                                newval = sensor.output / mc_sensor.MAXVAL
+                                LOG.info(
+                                    f"{channel.targets} {channel.volume:0.4f}/{last / mc_sensor.MAXVAL:0.4f} -> {newval:0.4f}"
+                                )
+                                channel.volume = newval
                         else:
                             break
-                    print(
-                        " | ".join(
-                            " ".join(
-                                f"{val:7.2f}"
-                                for val in [
-                                    sensor.rawval,
-                                    sensor.ema,
-                                    sensor.delta_ema,
-                                    sensor.output,
-                                ]
+                    now = datetime.datetime.now()
+                    if now - last_output > OUTPUT_PERIOD:
+                        last_output = now
+                        LOG.debug(
+                            " | ".join(
+                                " ".join(
+                                    f"{val:7.2f}"
+                                    for val in [
+                                        sensor.rawval,
+                                        sensor.ema,
+                                        sensor.delta_ema,
+                                        sensor.output,
+                                    ]
+                                )
+                                for sensor, _ in self.analog_channels
                             )
-                            for sensor in sensors
                         )
-                    )
                 if digital_line:
                     self.digital_values = [i == "1" for i in digital_line.split("|")]
-                    # print(self.digital_values)
+                    LOG.debug(self.digital_values)
                     # sessions = AudioUtilities.GetAllSessions()
-                    master_session.SetMute(1 if self.digital_values[0] else 0, self._lpcguid)
+                    master_session.SetMute(
+                        1 if self.digital_values[0] else 0, self._lpcguid
+                    )
+                # time.sleep(1)
 
 
 if __name__ == "__main__":
-    Main().main()
+    while True:
+        try:
+            logging.basicConfig(
+                format="%(asctime)s.%(msecs)03d %(levelname)s: %(message)s",
+                datefmt="%Y-%m-%dT%H:%M:%S",
+                level=logging.INFO,
+            )
+            Main().main()
+        except Exception:
+            LOG.exception("Exception in Main, restarting")
+            time.sleep(1)

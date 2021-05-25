@@ -14,10 +14,10 @@ pySerial = "^3.5"
 PyYAML = "^5.4.1"
 comtypes = "^1.1.8"
 pycaw-rf = "^20210213"
-#pyWinCoreAudio = { path = "../../../pyWinCoreAudio" }
-
-pywincoreaudio = "^0.3"
+# pyWinCoreAudio = { path = "../../../pyWinCoreAudio" }
+pywincoreaudio = "^0.5"
 jsonschema = "^3.2.0"
+
 [tool.poetry.dev-dependencies]
 ipdb = "^0.13.4"
 ipython = "^7.20.0"
