@@ -15,14 +15,20 @@ properties:
           type: array
           items:
             $ref: "#/definitions/target"
+        noise_reduction:
+          type: object
+          properties:
+            epsilon: {type: integer}
+            weight: {type: number}
+          additionalProperties: false
       required: [targets]
+      additionalProperties: false
   digital_channels:
     type: array
     items:
       type: object
       properties:
-        invert:
-          type: boolean
+        invert: {type: boolean}
         mute:
           type: object
           properties:
@@ -30,12 +36,15 @@ properties:
               type: array
               items:
                 $ref: "#/definitions/target"
-          additionalProperties: false
           required: [targets]
-      additionalProperties: false
+          additionalProperties: false
+        noise_reduction:
+          type: object
+          properties:
+            debounce_period: {type: integer}
+          additionalProperties: false
       required: [mute]
-
-
+      additionalProperties: false
   invert_sliders: {type: boolean}
   com_port: {type: string}
   baud_rate: {type: integer}
@@ -44,6 +53,7 @@ properties:
     properties:
       default_epsilon: {type: integer}
       default_weight: {type: number}
+      default_debounce_period: {type: integer}
     additionalProperties: false
 additionalProperties: false
 
@@ -63,8 +73,8 @@ definitions:
         process: {type: string}
         epsilon: {type: integer}
         weight: {type: number}
-      additionalProperties: false
       oneOf:
       - required: [device]
       - required: [process]
+      additionalProperties: false
 ...

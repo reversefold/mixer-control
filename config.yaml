@@ -1,21 +1,32 @@
 ---
 analog_channels:
 - targets:
-    - device: Chat (TC-Helicon GoXLR)
-- targets:
-    - device: Music (TC-Helicon GoXLR)
-- targets:
-    - device: Game (TC-Helicon GoXLR)
+  - device: Speakers (2- Logitech G733 Gaming Headset)
+  - device: Speakers (Realtek High Definition Audio)
+  noise_reduction:
+    epsilon: 10
+    weight: 0.1
 - invert: true
   targets:
-    - device: System (TC-Helicon GoXLR)
+  - device: System (TC-Helicon GoXLR)
 - targets:
-    - device: Speakers (Logitech G733 Gaming Headset)
-    - device: Speakers (Realtek High Definition Audio)
+  - device: Game (TC-Helicon GoXLR)
+- targets:
+  - device: Music (TC-Helicon GoXLR)
+- targets:
+  - device: Chat (TC-Helicon GoXLR)
+- targets:
+  - device: Sample (TC-Helicon GoXLR)
+- targets:
+  - process: firefox.exe
+- targets:
+  - process: msedge.exe
 digital_channels:
   - mute:
       targets:
       - device: System (TC-Helicon GoXLR)
+    noise_reduction:
+      debounce_period: 100
 # 0: master
 # 1: chrome.exe
 # 2: spotify.exe
@@ -26,20 +37,11 @@ digital_channels:
 
 # invert_sliders: false
 
-com_port: COM8
+com_port: COM9
 baud_rate: 9600
 
 noise_reduction:
   default_epsilon: 20
   default_weight: 0.2
-  # channels:
-  # #   0:
-  # #     epsilon: 18
-  # #     weight: 0.2
-  # #   1:
-  # #     epsilon: 18
-  # #     weight: 0.2
-  #   5:
-  #     epsilon: 100
-  #     weight: 1
+  default_debounce_period: 300
 ...
