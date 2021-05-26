@@ -1,4 +1,12 @@
 ---
+com_port: COM9
+baud_rate: 9600
+
+noise_reduction:
+  default_epsilon: 20
+  default_weight: 0.2
+  default_debounce_period: 300
+
 analog_channels:
 - targets:
   - device: Speakers (2- Logitech G733 Gaming Headset)
@@ -21,27 +29,11 @@ analog_channels:
   - process: firefox.exe
 - targets:
   - process: msedge.exe
+
 digital_channels:
   - mute:
       targets:
       - device: System (TC-Helicon GoXLR)
     noise_reduction:
       debounce_period: 100
-# 0: master
-# 1: chrome.exe
-# 2: spotify.exe
-# 3:
-#   - pathofexile_x64.exe
-#   - rocketleague.exe
-# 4: discord.exe
-
-# invert_sliders: false
-
-com_port: COM9
-baud_rate: 9600
-
-noise_reduction:
-  default_epsilon: 20
-  default_weight: 0.2
-  default_debounce_period: 300
 ...
