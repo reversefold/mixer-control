@@ -2,11 +2,13 @@
 import ctypes
 import datetime
 import logging
+import subprocess
 import sys
 import time
 
 import comtypes
 import pycaw
+import reversefold.util.proc
 import serial
 
 from mixer_control import sensor as mc_sensor
@@ -105,14 +107,24 @@ class Main(object):
 
 
 if __name__ == "__main__":
-    while True:
+    logging.basicConfig(
+        format="%(asctime)s.%(msecs)03d %(levelname)s: %(message)s",
+        datefmt="%Y-%m-%dT%H:%M:%S",
+        level=logging.INFO,
+    )
+    if "--no-retry" not in sys.argv:
+        while True:
+            try:
+                proc = subprocess.Popen([sys.executable, __file__, "--no-retry"])
+                LOG.info("Started subprocess %s", proc.pid)
+                proc.wait()
+            except Exception:
+                LOG.exception("Exception in subprocess, restarting")
+                reversefold.util.proc.die(proc)
+                proc.wait()
+            time.sleep(1)
+    else:
         try:
-            logging.basicConfig(
-                format="%(asctime)s.%(msecs)03d %(levelname)s: %(message)s",
-                datefmt="%Y-%m-%dT%H:%M:%S",
-                level=logging.INFO,
-            )
             Main().main()
         except Exception:
-            LOG.exception("Exception in Main, restarting")
-            time.sleep(1)
+            LOG.exception("Exception in main")
